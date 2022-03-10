@@ -41,3 +41,35 @@ Open solution in your IDE
 ```cmd
 .\docker.test.sln
 ```
+Add docker file using docker support for linux environment. This creates the `Dockerfile` with every step to build container and the `.dockerignore` file.
+
+```dockerfile
+FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
+WORKDIR /app
+EXPOSE 80
+EXPOSE 443
+
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+WORKDIR /src
+COPY ["docker.test.webapi/docker.test.webapi.csproj", "docker.test.webapi/"]
+RUN dotnet restore "docker.test.webapi/docker.test.webapi.csproj"
+COPY . .
+WORKDIR "/src/docker.test.webapi"
+RUN dotnet build "docker.test.webapi.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "docker.test.webapi.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "docker.test.webapi.dll"]
+```
+>- `aspnet:6.0` is the host environment 
+>- `sdk:6.0` is used to build and publish the .NET application.
+
+Build image
+
+```cmd
+docker build -t docker.test.webapi -f .\docker.test.webapi\Dockerfile .
+```
