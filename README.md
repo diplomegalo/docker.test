@@ -2,8 +2,8 @@
 
 Configure docker to run complete environnement with :
 
-- Web API
-- Serilog and Seq
+- the default asp.net web API project
+- nginx as secure reverse proxy 
 
 # Create Web API
 
@@ -98,6 +98,103 @@ docker run -tid --rm --name test_webapi -p 8080:80 -e "ASPNETCORE_ENVIRONMENT=De
 > Environment variable `ASPNETCORE_ENVIRONMENT` is set to `Development` to allow access to the swagger.
 
 Navigate to url `http://localhost:8080/swagger/index.html` to see whether the webapi is up and running.
+
+# Nginx reverse proxy
+
+Create directory to store nginx associated files.
+
+````shell
+mkdir "nginx"
+````
+## Docker compose with nginx
+
+### Dockerfile
+In the `/nginx` directory, create the `Dockerfile`.
+
+```dockerfile
+FROM nginx
+
+COPY nginx/nginx.local.conf etc/nginx/nginx.conf
+```
+
+### Nginx configuration
+In the `/nginx` directory, create the config file `nginx.local.conf` and add the data below.
+
+```config
+worker_processes 1;
+
+events {
+  worker_connections  1024;
+}
+
+http {
+  sendfile on;
+    
+  upstream webapi  {
+        server docker.test.webapi:80;
+  }
+    
+  server {
+      listen 44344;
+      server_name localhost;
+      
+      location / {
+          proxy_pass http://webapi;
+      }
+  }
+}
+```
+
+> Note that the nginx will listen on port 44344.
+> The `docker.test.webapi` value must be the same as the service describe in the docker compose file (see below).
+
+### Docker compose
+
+In the root directory, create the `dockercompose.yml` file.
+
+```yaml
+version: '3.4'
+
+services:
+  reverseproxy:
+    image: dockertest_reversproxy
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    depends_on:
+      - docker.test.webapi
+    ports:
+      - "44344:44344"
+  docker.test.webapi:
+    build:
+      context: .
+      dockerfile: docker.test.webapi/Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      - "ASPNETCORE_ENVIRONMENT=Development"
+```
+
+Run this first version by running the docker compose : 
+```shell
+docker-compose up
+```
+
+Test whether the complete environment and applications are up and running by navigating to the `http://localhost:44344/swagger/index.html`
+
+## Secure nginx
+
+First create a self-signed certificate with openssl. You will be prompt to encode some information about your certificate.
+> You can download openssl for windows with [chocolatey](https://community.chocolatey.org/packages/openssl) : `choco install openssl`
+
+In the `/nginx` directory, use first the following command:
+```shell
+openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout local.key -out local.crt
+```
+Then the following command:
+```shell
+openssl pkcs12 -export -out localhost.pfx -inkey local.key -in local.crt
+```
 
 # Serilog and Seq
 
