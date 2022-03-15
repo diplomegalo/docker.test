@@ -1,0 +1,22 @@
+﻿version: '3.4'
+
+services:
+  reverseproxy:
+    image: dockertest_reversproxy
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    ports:
+      - "44344:443"
+    restart: always
+    depends_on:
+      - docker.test.webapi
+  docker.test.webapi:
+    build:
+      context: .
+      dockerfile: docker.test.webapi/Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      - "ASPNETCORE_ENVIRONMENT=Development"
+    restart: always
