@@ -304,6 +304,24 @@ docker-compose up
 
 # Add seq as a service
 
+## Add service to docker-compose
+
+Update the `docker-compose.yml` file with : 
+
+```yaml
+  seqservice:
+    image: datalust/seq
+    restart: unless-stopped
+    ports:
+      - "5341:80"
+    environment:
+      - "ACCEPT_EULA=Y"
+```
+
+Run the `docker-compose up` command and try to navigate to `http://localhost:5341` to check whether the application is up and running.
+
+> At this time you can configure the API Key by creating it through the `Admin > API Key` menu of the application. Then copy and paste the generated key in the Seq section of your config file.
+
 ## Update project to use seq
 
 In the `docker.test\docker.test.webapi` folder execute the following command to install extensions methods allowing the application to send logs to Seq : 
@@ -312,14 +330,29 @@ In the `docker.test\docker.test.webapi` folder execute the following command to 
 Install-Package Seq.Extensions.Logging
 ```
 
-In your Startup class's `ConfigureServices()` method, call `AddSeq()` on the `loggingBuilder` provided by `AddLogging()`.
+In your `program.cs` file, call `AddSeq()` on the `loggingBuilder` provided by `AddLogging()`.
 
 ```c#
 public void ConfigureServices(IServiceCollection services)
 {
     services.AddLogging(loggingBuilder => 
     {
-    loggingBuilder.AddSeq();
+        loggingBuilder.AddSeq();
     });
 // ...
 ```
+
+In the `appsettings.json`, add the following section where the `ApiKey` value must be set with the key generate through the `API Key` menu of Seq,
+
+```json
+  "Seq": {
+    "ServerUrl": "http://seqservice",
+    "ApiKey": "123456",
+    "MinimumLevel": "Trace",
+    "LevelOverride": {
+      "Microsoft": "Warning"
+    }
+  },
+``` 
+
+> Note that the server url must be equal to the name of the service declared in the `docker-compose.yml` file.
