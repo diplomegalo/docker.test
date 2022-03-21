@@ -327,7 +327,7 @@ Run the `docker-compose up` command and try to navigate to `http://localhost:534
 In the `docker.test\docker.test.webapi` folder execute the following command to install extensions methods allowing the application to send logs to Seq : 
 
 ```shell
-Install-Package Seq.Extensions.Logging
+dotnet add package Seq.Extensions.Logging
 ```
 
 In your `program.cs` file, call `AddSeq()` on the `loggingBuilder` provided by `AddLogging()`.
