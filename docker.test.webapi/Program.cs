@@ -12,7 +12,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddLogging(loggingBuilder => loggingBuilder.AddSeq(builder.Configuration.GetSection("Seq")));
 
 builder.Services.AddDbContext<WeatherForecastDbContext>(optionsBuilder =>
-    optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString("AppDb")));
+{
+    optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString("AppDb"));
+});
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<WeatherForecastDbContext>();

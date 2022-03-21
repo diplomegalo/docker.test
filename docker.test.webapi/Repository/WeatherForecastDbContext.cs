@@ -5,8 +5,8 @@ namespace docker.test.webapi.Repository;
 public class WeatherForecastDbContext: DbContext
 {
     public DbSet<WeatherForecast> WeatherForecasts { get; set; }
-    
-    public WeatherForecastDbContext(DbContextOptions<WeatherForecastDbContext> options) 
+
+    public WeatherForecastDbContext(DbContextOptions<WeatherForecastDbContext> options)
         :base(options)
     {
     }
@@ -14,8 +14,8 @@ public class WeatherForecastDbContext: DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appSettings.json")
+            .SetBasePath($"{Directory.GetCurrentDirectory()}")
+            .AddJsonFile("appsettings.json")
             .Build();
 
         var connectionString = configuration.GetConnectionString("AppDb");
