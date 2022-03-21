@@ -27,3 +27,11 @@ services:
       - "5341:80"
     environment:
       - "ACCEPT_EULA=Y"
+  sqlserver: 
+    image: mcr.microsoft.com/mssql/server
+    restart: always
+    ports:
+      - "1434:1433"
+    environment:
+      - "ACCEPT_EULA=Y"
+      - "SA_PASSWORD=1StrongPwd!!"
