@@ -356,3 +356,114 @@ In the `appsettings.json`, add the following section where the `ApiKey` value mu
 ``` 
 
 > Note that the server url must be equal to the name of the service declared in the `docker-compose.yml` file.
+
+# Add Sql Server
+
+## Update docker-compose
+
+Update the `docker-compose.yml` file by adding a new service base on sql image : 
+
+```yaml
+sqlserver:
+  image: mcr.microsoft.com/mssql/server
+  restart: always
+  ports:
+    - "1434:1433"
+  environment:
+    - "ACCEPT_EULA=Y"
+    - "SA_PASSWORD=1StrongPwd!!"
+```
+
+Build with `docker-compose build` and run with `docker-compose up -d`.
+
+You can check whether the server is up and runing by connecting to the db through `SSMS` application. 
+
+## Update project to use EF core
+
+In the `docker.test\docker.test.webapi` directory, run the following commands to install and initiate database
+
+```shell
+dotnet add package Microsoft.EntityFrameworkCore
+dotnet add package Microsoft.EntityFrameworkCore.Design
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+```
+
+Create the `WeatherForecastDbContext.cs` with the `DbSet` of `WeatherForecast` and the override of the `OnConfiguring` methods. 
+
+```c#
+public class WeatherForecastDbContext: DbContext
+{
+    public DbSet<WeatherForecast> WeatherForecasts { get; set; }
+    
+    public WeatherForecastDbContext(DbContextOptions<WeatherForecastDbContext> options) 
+        :base(options)
+    {
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appSettings.json")
+            .Build();
+
+        var connectionString = configuration.GetConnectionString("AppDb");
+        optionsBuilder.UseSqlServer(connectionString);
+    }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<WeatherForecast>().HasNoKey();
+    }
+}
+```
+Update `program.cs` to add `DbContext` to the web API.
+
+```c#
+builder.Services.AddDbContext<WeatherForecastDbContext>(optionsBuilder =>
+    optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString("AppDb")));
+```
+
+Add the connection string data in the `appSettings.json`
+
+```json
+"ConnectionStrings": {
+  "AppDb": "Server=localhost:1434;Database=WebApiTest;User Id=sa;Password=1StrongPwd!!;"
+}
+```
+
+Create db with migration 
+
+```shell
+dotnet tool install --global dotnet-ef
+dotnet ef migrations add InitialCreate
+dotnet ef database update
+```
+
+
+## Add health check
+
+In the `docker.test\docker.test.webapi` directory, run the following command
+
+```shell
+ dotnet add package Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore
+```
+
+In the `appSettings.json`
+
+```json
+"ConnectionStrings": {
+  "AppDb": "Server=sqlservice;Database=WebApiTest;User Id=sa;Password=1StrongPwd!!;"
+}
+```
+
+
+In the `program.cs`
+
+```c#
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<WeatherForecastDbContext>();
+//...
+
+app.MapHealthChecks("health-check");
+```
