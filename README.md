@@ -96,7 +96,6 @@ Run container from image just build.
 ```shell
 docker run -tid --rm --name test_webapi -p 8080:80 -e "ASPNETCORE_ENVIRONMENT=Development" docker.test.webapi
 ```
-
 > Environment variable `ASPNETCORE_ENVIRONMENT` is set to `Development` to allow access to the swagger.
 
 Navigate to url `http://localhost:8080/swagger/index.html` to see whether the webapi is up and running.
