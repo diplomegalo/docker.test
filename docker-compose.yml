@@ -27,7 +27,7 @@ services:
       - "5341:80"
     environment:
       - "ACCEPT_EULA=Y"
-  sqlserver: 
+  sqlserver:
     image: mcr.microsoft.com/mssql/server
     restart: always
     ports:
